@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>User Profile</title>
+    <link
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+      crossorigin="anonymous"
+    />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+        background-color: #f8f9fa;
+        height: 100vh;
+      }
+      .container {
+        max-width: 600px;
+        margin: auto;
+        padding: 20px;
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      .error {
+        color: red;
+      }
+      .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 100;
+      }
+      .toast-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .toast-headings {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .success-indicator,
+      .error-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: none;
+      }
+      .success-indicator {
+        background-color: aquamarine;
+      }
+      .error-indicator {
+        background-color: red;
+      }
+    </style>
+  </head>
+  <body class="d-flex align-items-center justify-content-center">
+    <div class="container">
+      <h1 class="text-center mb-4">User Profile</h1>
+      <div id="error" class="error mb-3"></div>
+      <form id="profileForm">
+        <div class="form-group">
+          <label for="name">Name</label>
+          <input type="text" class="form-control" id="name" required />
+        </div>
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" class="form-control" id="email" required />
+        </div>
+        <div class="form-group">
+          <label for="profilePicture">Profile Picture</label>
+          <input type="file" class="form-control-file" id="profilePicture" />
+        </div>
+        <div class="form-group">
+          <label for="bio">Short Bio</label>
+          <textarea class="form-control" id="bio" rows="3"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Submit</button>
+      </form>
+    </div>
+
+    <div class="toast-container">
+      <div
+        id="liveToast"
+        class="toast"
+        role="alert"
+        aria-live="assertive"
+        aria-atomic="true"
+        data-delay="3000"
+      >
+        <div class="toast-header">
+          <div class="toast-headings">
+            <div class="success-indicator" id="successIndicator"></div>
+            <div class="error-indicator" id="errorIndicator"></div>
+            <strong class="mr-auto">Notification</strong>
+          </div>
+          <button
+            type="button"
+            class="ml-2 mb-1 close"
+            data-dismiss="toast"
+            aria-label="Close"
+          >
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="toast-body">This is a toast message.</div>
+      </div>
+    </div>
+
+    <script
+      src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"
+      crossorigin="anonymous"
+    ></script>
+
+    <script>
+      function showSuccessIndicator() {
+        document.getElementById("successIndicator").style.display = "block";
+        document.getElementById("errorIndicator").style.display = "none";
+      }
+
+      function showErrorIndicator() {
+        document.getElementById("successIndicator").style.display = "none";
+        document.getElementById("errorIndicator").style.display = "block";
+      }
+
+      document
+        .getElementById("profileForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const errorDiv = document.getElementById("error");
+          errorDiv.textContent = "";
+
+          const name = document.getElementById("name").value;
+          const email = document.getElementById("email").value;
+          const bio = document.getElementById("bio").value;
+          const profilePicture =
+            document.getElementById("profilePicture").files[0];
+
+          if (!name || !email) {
+            errorDiv.textContent = "Name and Email are required.";
+            return;
+          }
+
+          const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailPattern.test(email)) {
+            errorDiv.textContent = "Please enter a valid email address.";
+            return;
+          }
+
+          const formData = new FormData();
+          formData.append("name", name);
+          formData.append("email", email);
+          formData.append("bio", bio);
+          if (profilePicture) {
+            formData.append("profilePicture", profilePicture);
+          }
+
+          try {
+            const response = await fetch("/api/profile", {
+              method: "POST",
+              body: formData,
+            });
+            const result = await response.json();
+
+            if (response.ok) {
+              document.getElementById("profileForm").reset();
+              showSuccessIndicator();
+              document.querySelector(".toast-body").textContent =
+                result.message;
+            } else {
+              showErrorIndicator();
+              errorDiv.textContent = result.message || "An error occurred.";
+            }
+
+            const toastElement = document.getElementById("liveToast");
+            const toast = new bootstrap.Toast(toastElement);
+            toast.show();
+          } catch (error) {
+            showErrorIndicator();
+            errorDiv.textContent =
+              "An error occurred while submitting the form.";
+          }
+        });
+    </script>
+  </body>
+</html>
